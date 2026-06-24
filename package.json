@@ -1,0 +1,26 @@
+{
+  "name": "shadow-panel-docs",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Shadow Panel 教程与部署文档站（Vue3 + Vite + shadcn-vue 风格）",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-vue-next": "^0.469.0",
+    "tailwind-merge": "^2.6.0",
+    "vue": "^3.5.13",
+    "vue-router": "^4.5.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.0.0",
+    "@vitejs/plugin-vue": "^5.2.1",
+    "tailwindcss": "^4.0.0",
+    "vite": "^6.0.7"
+  }
+}

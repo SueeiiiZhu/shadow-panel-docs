@@ -1,0 +1,21 @@
+<template>
+  <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect width="32" height="32" rx="8" fill="url(#sp-g)" />
+    <path
+      d="M16 6.5 9 9.6v4.5c0 4.3 2.9 8.3 7 9.4 4.1-1.1 7-5.1 7-9.4V9.6L16 6.5Z"
+      fill="white"
+      fill-opacity="0.95"
+    />
+    <path
+      d="M16 6.5 9 9.6v4.5c0 4.3 2.9 8.3 7 9.4V6.5Z"
+      fill="white"
+      fill-opacity="0.55"
+    />
+    <defs>
+      <linearGradient id="sp-g" x1="0" y1="0" x2="32" y2="32">
+        <stop stop-color="#6366f1" />
+        <stop offset="1" stop-color="#8b5cf6" />
+      </linearGradient>
+    </defs>
+  </svg>
+</template>
