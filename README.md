@@ -2,7 +2,7 @@
 
 [Shadow Panel](https://trojanpanel.github.io/) 是对 [Trojan Panel](https://trojanpanel.github.io/) 的轻量化重写：单二进制 + SQLite 起步、HTTPS REST 取代无 TLS gRPC、Caddy 自动签发 TLS 证书，并**原生支持 socks/https 上游与 dialer-proxy 链式出站**，让面板能直接对接 IP 代理站提供的节点。
 
-本仓库是它的**教程与部署文档站**，使用 **VuePress 2**（默认主题）构建，内容为 markdown。
+本仓库是它的**教程与部署文档站**，使用 **VuePress 2 + vuepress-theme-hope** 构建，内容为 markdown。
 
 ## 技术栈
 
@@ -10,8 +10,8 @@
 | --- | --- |
 | 框架 | VuePress 2 (`2.0.0-rc`) |
 | 打包 | `@vuepress/bundler-vite` |
-| 主题 | `@vuepress/theme-default` |
-| 搜索 | `@vuepress/plugin-search`（本地全文搜索） |
+| 主题 | `vuepress-theme-hope`（hint 容器 / 代码分组 / 选项卡等增强） |
+| 搜索 | `@vuepress/plugin-slimsearch`（本地全文搜索，`Ctrl+K`） |
 | 内容 | Markdown（`docs/*.md`） |
 
 ## 开发
@@ -27,7 +27,7 @@ pnpm docs:build   # 产物输出到 docs/.vuepress/dist/
 ```
 docs/
 ├── .vuepress/
-│   ├── config.js         # 站点配置：导航 / 侧边栏 / 搜索
+│   ├── config.js         # 站点配置：hope 主题 / 导航 / 侧边栏 / slimsearch
 │   └── public/           # 静态资源（favicon 等）
 ├── README.md             # 首页（home 布局：介绍）
 ├── why.md                # 为什么重写

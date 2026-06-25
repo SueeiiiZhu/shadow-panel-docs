@@ -1,7 +1,6 @@
 import { viteBundler } from '@vuepress/bundler-vite'
-import { searchPlugin } from '@vuepress/plugin-search'
-import { defaultTheme } from '@vuepress/theme-default'
 import { defineUserConfig } from 'vuepress'
+import { hopeTheme } from 'vuepress-theme-hope'
 
 export default defineUserConfig({
   lang: 'zh-CN',
@@ -13,8 +12,11 @@ export default defineUserConfig({
 
   bundler: viteBundler(),
 
-  theme: defaultTheme({
+  theme: hopeTheme({
     logo: '/favicon.svg',
+    repo: undefined,
+    docsDir: 'docs',
+
     // 顶部导航
     navbar: [
       { text: '介绍', link: '/' },
@@ -24,6 +26,7 @@ export default defineUserConfig({
       { text: '迁移', link: '/migrate.md' },
       { text: 'FAQ', link: '/faq.md' },
     ],
+
     // 侧边栏分组（顺序与原站一致）
     sidebar: [
       {
@@ -47,18 +50,35 @@ export default defineUserConfig({
         children: ['/migrate.md', '/faq.md'],
       },
     ],
+
+    // 页脚
+    footer: 'Shadow Panel · 轻量化多协议代理面板',
+    displayFooter: true,
+
     // 关闭依赖外部仓库 / git 元数据的功能
     editLink: false,
     lastUpdated: false,
     contributors: false,
-  }),
 
-  plugins: [
-    searchPlugin({
-      locales: {
-        '/': { placeholder: '搜索文档' },
+    // markdown 增强（hint 容器 / 代码分组 / 选项卡等）
+    markdown: {
+      hint: true,
+      tabs: true,
+      codeTabs: true,
+      align: true,
+      tasklist: true,
+      mark: true,
+      sup: true,
+      sub: true,
+    },
+
+    // 主题内置插件
+    plugins: {
+      // 本地全文搜索
+      slimsearch: {
+        indexContent: true,
+        hotKeys: [{ key: 'k', ctrl: true }],
       },
-      maxSuggestions: 10,
-    }),
-  ],
+    },
+  }),
 })
