@@ -82,12 +82,12 @@ const naiveproxyUpstream = `{
     </p>
     <ul>
       <li><strong>VLESS + XTLS-Reality</strong>：不需要自有域名和证书，Reality 借用目标网站的 TLS 指纹完成握手，可在没有域名的 IP 上直接部署。</li>
-      <li><strong>Hysteria2</strong>：需要 TLS，但可使用自签证书（需客户端配置 <code>insecure: true</code> 或固定指纹），也可用真实域名 + ACME 自动签发。</li>
-      <li><strong>VLESS / VMESS + TLS</strong>、<strong>Trojan（via Xray-core）</strong>、<strong>NaiveProxy</strong>：均需要有效的 TLS 证书；NaiveProxy 强依赖真实域名，因为 Caddy 需要通过 ACME 自动签发证书。</li>
+      <li><strong>Hysteria2</strong>：需要 TLS，但可使用自签证书（需客户端配置 <code>insecure: true</code> 或固定指纹），也可用真实域名，由节点上的 Caddy 自动签发证书。</li>
+      <li><strong>VLESS / VMESS + TLS</strong>、<strong>Trojan（via Xray-core）</strong>、<strong>NaiveProxy</strong>：均需要有效的 TLS 证书与真实域名；证书统一由节点上的 <strong>Caddy</strong> 通过 ACME 自动签发并续期，各内核直接复用 Caddy 的证书文件。</li>
       <li><strong>sing-box</strong>：各协议要求与上述保持一致，Reality 入站同样可免域名。</li>
     </ul>
     <Callout type="tip" title="推荐做法">
-      如果你没有域名，首选 VLESS + Reality；有域名则用 Hysteria2（ACME 自签）或 Trojan via Xray-core + 真实证书，客户端兼容性更广。
+      如果你没有域名，首选 VLESS + Reality；有域名则用 Hysteria2 或 Trojan via Xray-core，配合 Caddy 自动签发的真实证书，客户端兼容性更广。
     </Callout>
 
     <h2>dialer-proxy 支持所有内核和协议吗？</h2>

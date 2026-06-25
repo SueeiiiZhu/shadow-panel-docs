@@ -9,7 +9,7 @@ const installAgent = `# 在代理服务器上执行
 bash <(curl -fsSL https://get.shadow-panel.dev/agent)
 
 # 安装完成后，用 Panel 颁发的 token 注册并启动
-shadow-agent --panel https://panel.example.com:8080 --token <AGENT_TOKEN>`
+shadow-agent --panel https://panel.example.com --token <AGENT_TOKEN>`
 </script>
 
 <template>
@@ -19,11 +19,11 @@ shadow-agent --panel https://panel.example.com:8080 --token <AGENT_TOKEN>`
     <ul>
       <li>操作系统：Linux x86_64 或 arm64，内核 ≥ 4.9</li>
       <li>内存：≥ 1 GB（Panel + Agent 同机部署建议 ≥ 2 GB）</li>
-      <li>可选：一个域名 + TLS 证书（可使用 Let's Encrypt；纯 IP 访问时面板使用自签证书）</li>
+      <li>建议：一个解析到本机的域名（用于 Caddy 自动签发 Let's Encrypt 证书，无需手动申请；纯 IP 访问时回退自签证书）</li>
       <li>
         防火墙放行端口：
         <ul>
-          <li><code>8080/tcp</code> — Panel 管理后台 HTTPS</li>
+          <li><code>80/tcp</code> + <code>443/tcp</code> — Caddy 反向代理（ACME 证书签发 + Panel 管理后台 HTTPS）</li>
           <li><code>8443/tcp</code> — Agent API（Panel 与 Agent 之间通信）</li>
           <li>各代理节点监听端口（由节点配置决定，例如 <code>443</code>、<code>8388</code> 等）</li>
         </ul>
@@ -36,12 +36,12 @@ shadow-agent --panel https://panel.example.com:8080 --token <AGENT_TOKEN>`
     </p>
     <CodeBlock lang="bash" filename="panel-server" :code="installPanel" />
     <p>
-      脚本会自动下载 <code>shadow-panel</code> 二进制、写入 systemd 服务并启动。安装完成后，终端输出中会打印首次登录的随机管理员密码，例如：
+      脚本会自动下载 <code>shadow-panel</code> 二进制、安装并配置 <strong>Caddy</strong>（自动申请 TLS 证书 + 反向代理）、写入 systemd 服务并启动。安装过程会提示你输入面板域名。安装完成后，终端输出中会打印首次登录的随机管理员密码，例如：
     </p>
     <blockquote>
       <p><strong>Admin password:</strong> <code>Xk7qR2mNpY9w</code>（请立即保存，仅显示一次）</p>
     </blockquote>
-    <p>Panel 默认监听 <code>0.0.0.0:8080</code>，数据存储使用内嵌 SQLite，无需额外数据库。</p>
+    <p>Panel 默认监听本地 <code>127.0.0.1:8080</code>，由 Caddy 在 <code>:443</code> 终止 TLS 并反向代理；数据存储使用内嵌 SQLite，无需额外数据库。</p>
 
     <Callout type="info" title="查看启动日志">
       如果终端输出滚过了，可用 <code>journalctl -u shadow-panel -n 50</code> 重新查看密码与启动状态。
@@ -49,7 +49,7 @@ shadow-agent --panel https://panel.example.com:8080 --token <AGENT_TOKEN>`
 
     <h2>首次登录</h2>
     <ol>
-      <li>浏览器访问 <code>https://&lt;你的服务器IP&gt;:8080</code>（自签证书时需信任或跳过浏览器警告）。</li>
+      <li>浏览器访问 <code>https://panel.example.com</code>（你在安装时填写的域名，Caddy 已自动签发受信任证书；若用纯 IP 则需跳过浏览器自签警告）。</li>
       <li>使用用户名 <code>admin</code> 和安装时生成的随机密码登录。</li>
       <li>进入「系统设置 → 账户安全」，立即修改管理员密码并保存。</li>
     </ol>

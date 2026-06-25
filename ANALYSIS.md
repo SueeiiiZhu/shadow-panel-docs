@@ -59,14 +59,18 @@
 ### 3.2 架构
 
 ```
-管理员 ──HTTPS──> shadow-panel (控制面, :8080)
+管理员 ──HTTPS:443──> Caddy (自动 ACME 证书 + 反向代理)
+                         │  443 → 127.0.0.1:8080
+                         ▼
+                    shadow-panel (控制面, 本地 :8080)
                     │  · 单二进制内嵌 Vue 后台
                     │  · SQLite 默认存储（可选 MySQL）
                     │  · 认证/用户/节点/订阅/看板
                     │
-                    ├─HTTPS REST + per-agent token─> shadow-agent #1 (:8443)
-                    └─HTTPS REST + per-agent token─> shadow-agent #2 (:8443)
+                    ├─HTTPS REST + per-agent token─> shadow-agent #1 (:8443) + Caddy(发证)
+                    └─HTTPS REST + per-agent token─> shadow-agent #2 (:8443) + Caddy(发证)
                                                        │ 生成内核配置 / 启停进程 / 上报流量
+                                                       │ TLS 证书复用本机 Caddy 自动签发的 crt/key
                                                        ▼
                                    Xray-core · Hysteria2 · NaiveProxy · sing-box
                                                        │
@@ -75,6 +79,8 @@
                                                    目标站点
 ```
 
+**TLS 方案**：不自建 ACME，统一交给 **Caddy**（静态二进制，启动即自动向 Let's Encrypt / ZeroSSL 申请并续期免费正式证书）。面板侧 Caddy 反代 `127.0.0.1:8080` 并在 443 终止 TLS；节点侧每台落地机也跑一个 Caddy，为节点域名自动签发证书并托管伪装站，`shadow-agent` 直接复用 Caddy 证书存储中的 `crt/key` 喂给各内核（NaiveProxy 本身即 Caddy + `forward_proxy`，天然集成）。证书续期全程由 Caddy 自动完成，无需手动维护。
+
 ### 3.3 与 Trojan Panel 的关键差异
 
 | 维度 | Trojan Panel | Shadow Panel |
@@ -82,6 +88,7 @@
 | 二进制/仓库 | 4 仓库 / 6 容器 | 2 个单二进制（panel + agent） |
 | 存储 | MariaDB + Redis | SQLite 默认（可选 MySQL） |
 | Panel↔节点通信 | 无 TLS gRPC + 共享 MySQL | HTTPS REST + per-agent token |
+| TLS 证书 | 各内核/Caddy 各自零散管理 | 统一 Caddy 自动签发+续期，内核复用其 crt/key |
 | 出站 | 硬编码 `freedom` 直连 | 每节点可配 上游 socks/https + dialer-proxy |
 | 对接 IP 代理站 | ❌ | ✅ |
 | 内核版本 | Xray v1.8.0 / Trojan-Go EOL / Hysteria v1 | Xray v26.x / Hysteria2 / sing-box / 弃用 Trojan-Go |

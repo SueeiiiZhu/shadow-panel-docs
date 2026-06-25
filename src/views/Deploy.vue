@@ -10,13 +10,22 @@ services:
     image: ghcr.io/shadow-panel/shadow-panel:latest
     container_name: shadow-panel
     restart: unless-stopped
-    ports:
-      - "8080:8080"
+    network_mode: host                # 仅监听 127.0.0.1:8080，TLS/公网交给 Caddy
     volumes:
-      - ./data:/app/data          # SQLite 数据库与证书持久化
+      - ./data:/app/data              # SQLite 数据库持久化
     environment:
-      - SP_DOMAIN=panel.example.com   # 填写域名后自动签发 TLS 证书
-      # SP_ADMIN_PASS=change_me_now  # 首次启动管理员密码（建议写死后删除）
+      - SP_LISTEN=127.0.0.1:8080      # 本地 HTTP，不直接对外
+      # SP_ADMIN_PASS=change_me_now   # 首次启动管理员密码（建议改后删除）
+
+  caddy:
+    image: caddy:2                    # 自动 HTTPS：免费正式证书 + 自动续期 + 反向代理
+    container_name: shadow-caddy
+    restart: unless-stopped
+    network_mode: host                # 绑定 80/443
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - ./caddy-data:/data            # 证书与 ACME 账号持久化（务必随机器备份）
+      - ./caddy-config:/config
 
   # ── 可选：切换为 MySQL ──────────────────────────────────────
   # mysql:
@@ -31,8 +40,26 @@ services:
   #     - ./mysql-data:/var/lib/mysql
   #
   # shadow-panel 追加环境变量：
-  #   - SP_DB_DSN=sp:strong_sp_pass@tcp(mysql:3306)/shadowpanel?parseTime=true
+  #   - SP_DB_DSN=sp:strong_sp_pass@tcp(127.0.0.1:3306)/shadowpanel?parseTime=true
   # ──────────────────────────────────────────────────────────────`
+
+const caddyfilePanel = `# Caddyfile —— 面板服务器
+# Caddy 启动后自动向 Let's Encrypt / ZeroSSL 申请并续期免费正式证书，无需任何额外配置
+panel.example.com {
+    reverse_proxy 127.0.0.1:8080
+}`
+
+const caddyfileNode = `# Caddyfile —— 节点服务器（自动签发证书 + 伪装站）
+node.example.com {
+    tls admin@example.com          # ACME 联系邮箱（可选）
+    root * /var/www/decoy          # 伪装网站根目录
+    file_server
+}`
+
+const certReusePath = `# Caddy 自动签发的证书文件路径（对应 ./caddy-data 卷）
+# shadow-agent 在节点配置中选择「证书来源 = Caddy」并填入域名后，自动引用以下文件：
+/data/caddy/certificates/acme-v02.api.letsencrypt.org-directory/node.example.com/node.example.com.crt
+/data/caddy/certificates/acme-v02.api.letsencrypt.org-directory/node.example.com/node.example.com.key`
 
 const downloadBash = `# 下载最新二进制（以 amd64 Linux 为例）
 ARCH=amd64   # 或 arm64
@@ -60,8 +87,7 @@ Group=nobody
 WorkingDirectory=/var/lib/shadow-panel
 ExecStart=/usr/local/bin/shadow-panel \
   --data-dir /var/lib/shadow-panel \
-  --domain panel.example.com \
-  --port 8080
+  --listen 127.0.0.1:8080
 Restart=on-failure
 RestartSec=5
 LimitNOFILE=65535
@@ -129,18 +155,26 @@ sqlite3 /var/lib/shadow-panel/shadow.db ".backup /backup/shadow.db.$(date +%Y%m%
 
     <h2>Docker Compose 部署 Panel</h2>
     <p>
-      Shadow Panel 的 compose 文件只需一个服务即可完整运行。对比旧版 Trojan Panel
-      需要 <strong>caddy + MariaDB + Redis + panel + ui + core</strong> 六个容器，
-      Shadow Panel 将管理后台 UI 内嵌进单一二进制，并默认使用 SQLite 存储，
-      彻底消除外部数据库与缓存依赖。
+      推荐组合仅 <strong>两个</strong>服务：<code>shadow-panel</code>（内嵌管理后台 UI +
+      SQLite，仅监听本地 <code>127.0.0.1:8080</code>）与 <code>caddy</code>（自动 HTTPS +
+      反向代理）。对比旧版 Trojan Panel 需要 <strong>caddy + MariaDB + Redis + panel +
+      ui + core</strong> 六个容器，依然大幅精简——去掉了 MariaDB、Redis 与独立 UI 容器。
     </p>
 
     <CodeBlock lang="yaml" filename="docker-compose.yml" :code="composeYaml" />
 
+    <p>
+      与之配套的 <code>Caddyfile</code>（与 compose 同目录）只需声明域名与反代目标，
+      Caddy 即自动完成证书申请与续期：
+    </p>
+
+    <CodeBlock lang="text" filename="Caddyfile" :code="caddyfilePanel" />
+
     <Callout type="tip" title="启动步骤">
-      将上述文件保存为 <code>docker-compose.yml</code>，修改 <code>SP_DOMAIN</code>
-      为你的实际域名，然后执行 <code>docker compose up -d</code>。
-      面板会在 <code>:8080</code> 监听，ACME 证书自动签发到 <code>./data/certs/</code>。
+      将 <code>docker-compose.yml</code> 与 <code>Caddyfile</code> 放在同一目录，
+      把 <code>panel.example.com</code> 改成你的实际域名（需提前解析到本机 IP），
+      然后执行 <code>docker compose up -d</code>。Caddy 会在首次启动时自动签发证书，
+      随后即可通过 <code>https://panel.example.com</code> 访问后台。
     </Callout>
 
     <p>
@@ -160,32 +194,49 @@ sqlite3 /var/lib/shadow-panel/shadow.db ".backup /backup/shadow.db.$(date +%Y%m%
 
     <CodeBlock lang="ini" filename="shadow-panel.service" :code="systemdUnit" />
 
-    <Callout type="info" title="用户权限">
-      单元文件使用 <code>nobody</code> 用户运行，监听端口 8080（大于 1024 无需
-      <code>CAP_NET_BIND_SERVICE</code>）。若需监听 443/80，保留
-      <code>AmbientCapabilities</code> 行并确保内核支持 Ambient Capabilities。
+    <Callout type="info" title="用户权限与前置 Caddy">
+      单元文件使用 <code>nobody</code> 用户运行，仅监听本地 <code>127.0.0.1:8080</code>
+      （大于 1024，无需特权）。二进制部署同样在同机安装 <code>caddy</code>（一个静态二进制），
+      由 Caddy 绑定 80/443 并反代到本地 8080——见下方「TLS 证书与反向代理」。
     </Callout>
 
-    <h2>TLS 证书</h2>
-    <p>Shadow Panel 内置两种 TLS 方式，二选一：</p>
+    <h2>TLS 证书与反向代理（Caddy）</h2>
+    <p>
+      Shadow Panel 不再自建一套 ACME，而是<strong>统一交给 Caddy</strong>——目前最省心的免费
+      正式证书方案：Caddy 是一个静态二进制，启动即自动向 Let's Encrypt / ZeroSSL 申请并
+      <strong>自动续期</strong>免费证书，同时充当 HTTP 反向代理。Panel 只监听本地 HTTP，
+      TLS 终结与公网入口全部由 Caddy 负责。
+    </p>
 
-    <ul>
-      <li>
-        <strong>ACME 自动签发（推荐）</strong>：在配置或环境变量中填写
-        <code>SP_DOMAIN=panel.example.com</code>，面板启动时通过 Let's Encrypt / ZeroSSL
-        自动申请并续签证书，无需手动操作。域名必须解析到本机 IP，且 80 端口可被外网访问
-        （ACME HTTP-01 challenge）。
-      </li>
-      <li>
-        <strong>手动证书</strong>：将 <code>fullchain.pem</code> 与 <code>privkey.pem</code>
-        放入 <code>/var/lib/shadow-panel/certs/</code>（Docker 对应 <code>./data/certs/</code>），
-        并设置 <code>SP_TLS_CERT</code> / <code>SP_TLS_KEY</code> 指向对应路径。
-      </li>
-    </ul>
+    <h3>面板侧</h3>
+    <p>
+      用上文的 <code>Caddyfile</code> 反代到 <code>127.0.0.1:8080</code> 即可；域名解析到本机、
+      放行 80/443 后，Caddy 自动完成签发与续期，无需任何手动操作。二进制部署时安装 Caddy
+      并启用其 systemd 服务：<code>apt install caddy</code> 或下载官方静态二进制，
+      将上文 <code>Caddyfile</code> 放到 <code>/etc/caddy/Caddyfile</code> 后
+      <code>systemctl reload caddy</code>。
+    </p>
 
-    <Callout type="info" title="证书存储">
-      ACME 证书与账号信息持久化在数据目录 <code>data/certs/</code>，
-      只要该目录随容器或机器一起备份，重启后无需重新签发。
+    <h3>节点侧（内核复用 Caddy 证书）</h3>
+    <p>
+      在每台落地机也运行一个 Caddy，为节点域名自动签发证书，并顺带托管伪装站点；
+      <code>shadow-agent</code> 直接<strong>复用 Caddy 证书存储里的 crt/key</strong> 提供给
+      Xray / Hysteria2 等内核（NaiveProxy 本身即 Caddy + <code>forward_proxy</code>，天然集成）。
+      在节点配置中选择「证书来源 = Caddy」并填入域名即可，无需手动上传或维护续期。
+    </p>
+
+    <CodeBlock lang="text" filename="Caddyfile（节点）" :code="caddyfileNode" />
+    <CodeBlock lang="text" filename="证书路径" :code="certReusePath" />
+
+    <Callout type="info" title="证书持久化">
+      Caddy 的证书与 ACME 账号信息持久化在 <code>./caddy-data</code>（容器 <code>/data</code>）卷中，
+      只要该目录随容器或机器一起备份，重启后无需重新签发，也不会触发 Let's Encrypt 速率限制。
+    </Callout>
+
+    <Callout type="tip" title="纯 IP 快速测试">
+      没有域名、只想本地快速试用时，可让 Panel 直接以自签证书监听
+      （<code>SP_TLS_SELF_SIGNED=true</code>），跳过 Caddy；浏览器需手动信任证书。
+      生产环境仍建议用 Caddy + 真实域名。
     </Callout>
 
     <h2>多节点 Agent 部署</h2>
@@ -215,7 +266,7 @@ sqlite3 /var/lib/shadow-panel/shadow.db ".backup /backup/shadow.db.$(date +%Y%m%
 
     <h3>管理后台访问控制</h3>
     <ul>
-      <li>将面板默认端口 8080 改为非常用端口，或通过 Nginx/Caddy 反代并限制来源 IP 段（<code>allow</code> / <code>deny</code>）。</li>
+      <li>Panel 仅监听 <code>127.0.0.1:8080</code>，不直接对外；在前置 Caddy 中用 <code>@admin remote_ip</code> 匹配并 <code>respond 403</code>，将后台限制为运维 IP 段或 VPN 内网。</li>
       <li>启用面板内置的 <strong>两步验证（TOTP）</strong>，防止管理员账号被暴力破解。</li>
       <li>Panel 服务不要直接暴露在公网；如必须公网访问，配置 Fail2ban 封锁失败登录 IP。</li>
     </ul>
@@ -250,9 +301,14 @@ sqlite3 /var/lib/shadow-panel/shadow.db ".backup /backup/shadow.db.$(date +%Y%m%
       </thead>
       <tbody>
         <tr>
-          <td><code>8080</code></td>
-          <td>Panel 管理后台 HTTPS</td>
-          <td>仅限运维 IP 或 VPN 内网访问</td>
+          <td><code>80</code> / <code>443</code></td>
+          <td>Caddy（TLS 终结 + 反代面板）</td>
+          <td>公网开放（ACME 签发需要 80）</td>
+        </tr>
+        <tr>
+          <td><code>127.0.0.1:8080</code></td>
+          <td>Panel 后台（本地 HTTP，Caddy 反代）</td>
+          <td>仅本机，不对外暴露</td>
         </tr>
         <tr>
           <td><code>8443</code></td>
@@ -290,7 +346,7 @@ sqlite3 /var/lib/shadow-panel/shadow.db ".backup /backup/shadow.db.$(date +%Y%m%
     <Callout type="tip" title="Docker 环境备份">
       使用 Docker Compose 时，<code>shadow.db</code> 挂载在宿主机 <code>./data/shadow.db</code>，
       直接对宿主机路径执行 <code>cp</code> 或 <code>sqlite3 .backup</code> 即可，
-      无需停止容器。建议同时备份 <code>./data/certs/</code> 目录以保留 ACME 账号与证书。
+      无需停止容器。建议同时备份 <code>./caddy-data/</code> 目录以保留 Caddy 的 ACME 账号与证书。
     </Callout>
 
     <p>

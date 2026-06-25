@@ -4,10 +4,15 @@ import CodeBlock from '@/components/CodeBlock.vue'
 import Callout from '@/components/Callout.vue'
 const asciiDiagram = `
 管理员 (浏览器)
-     │  HTTPS :8080
+     │  HTTPS :443
      ▼
 ┌────────────────────────────────────────┐
-│           shadow-panel                 │
+│            Caddy（反向代理）             │
+│   自动 ACME 证书 · 443 → 127.0.0.1:8080  │
+└───────────────┬────────────────────────┘
+                ▼
+┌────────────────────────────────────────┐
+│         shadow-panel  :8080(本地)       │
 │  内嵌 Vue 管理后台 · SQLite(默认)/MySQL │
 │  认证 / 用户 / 节点 / 订阅 / 看板       │
 └───────────────┬────────────────────────┘
@@ -17,9 +22,11 @@ const asciiDiagram = `
 ┌─────────────┐    ┌─────────────┐
 │ shadow-agent│    │ shadow-agent│   …更多节点服务器
 │  :8443      │    │  :8443      │
+│ Caddy(发证) │    │ Caddy(发证) │
 └──────┬──────┘    └──────┬──────┘
        │                  │
   生成配置 / 启停进程    生成配置 / 启停进程
+  （复用 Caddy 证书）    （复用 Caddy 证书）
        │                  │
   ┌────┴────────────┐      ┌────┴─────────────┐
   │ Xray-core       │      │ Hysteria2         │
@@ -54,7 +61,7 @@ const asciiDiagram = `
     <h2>控制面 Panel</h2>
     <p>
       Panel 是一个<strong>单文件二进制</strong>，内嵌已编译好的 Vue 3 管理后台，无需单独部署前端服务器。
-      启动后在 <code>:8080</code> 提供 HTTPS 管理界面和 REST API。
+      启动后默认监听本地 <code>127.0.0.1:8080</code> 提供管理界面和 REST API，由前置的 <strong>Caddy</strong> 反向代理在 <code>:443</code> 终止 TLS 并自动签发证书。
     </p>
     <ul>
       <li><strong>认证</strong>：JWT 签发与验证，支持 RBAC 权限控制。</li>
@@ -129,7 +136,7 @@ const asciiDiagram = `
     </p>
     <ul>
       <li>旧版 gRPC 通道不加密（明文传输节点配置与账号信息），Shadow Panel 所有通信走 HTTPS，传输层默认加密。</li>
-      <li>旧版 Agent 直连 Panel 侧 MySQL，意味着数据库端口必须对所有 Agent 服务器开放；Shadow Panel 中 Agent 只需能访问 Panel 的 <code>:8080</code> HTTPS 端口，数据库完全隔离在 Panel 内部。</li>
+      <li>旧版 Agent 直连 Panel 侧 MySQL，意味着数据库端口必须对所有 Agent 服务器开放；Shadow Panel 中 Agent 只需能访问 Panel 经 Caddy 暴露的 <code>:443</code> HTTPS 端口，数据库完全隔离在 Panel 内部。</li>
       <li>旧版多 Agent 共用同一个数据库账号，权限边界模糊；Shadow Panel 每 Agent 独立 token，随时可单独吊销，不影响其他 Agent。</li>
     </ul>
 
@@ -137,7 +144,7 @@ const asciiDiagram = `
       REST over HTTPS 相比 gRPC 有三个实际优势：
       其一，<strong>更易调试</strong>——<code>curl</code> / Postman 即可模拟请求，无需 grpcurl 或 .proto 文件；
       其二，<strong>更易穿透</strong>——标准 HTTPS(443/8443) 几乎所有云厂商防火墙和 CDN 均默认放行，gRPC 的 HTTP/2 帧有时会被中间件拦截；
-      其三，<strong>TLS 开箱即用</strong>——REST 直接复用标准 HTTPS 证书体系，gRPC 需额外配置 TLS credentials，在生产环境中更易出错。
+      其三，<strong>TLS 开箱即用</strong>——前置 Caddy 即可自动签发并续期标准 HTTPS 证书，REST 直接复用，gRPC 需额外配置 TLS credentials，在生产环境中更易出错。
     </Callout>
 
     <h2>与 Trojan Panel 架构对比</h2>
@@ -173,7 +180,7 @@ const asciiDiagram = `
         <tr>
           <td>传输层 TLS</td>
           <td>Panel ↔ Agent 明文；数据库连接依赖网络隔离</td>
-          <td>全链路 HTTPS，证书自管理</td>
+          <td>全链路 HTTPS，Caddy 自动签发并续期证书</td>
         </tr>
         <tr>
           <td>上游出站 / 代理链</td>

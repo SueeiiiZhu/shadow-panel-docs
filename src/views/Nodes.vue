@@ -92,8 +92,9 @@ const deliveryFlow = `Panel 保存节点
       <li><strong>保存</strong>：Panel 将节点配置持久化到数据库，并通过 HTTPS REST 下发给目标 Agent（<code>POST https://&lt;agent-host&gt;:8443/nodes</code>，Authorization 使用该 Agent 的 bearer token）。Agent 收到后生成内核配置文件并启动/热重载进程，随后回报运行状态。</li>
     </ol>
 
-    <Callout type="info" title="证书管理">
-      Agent 支持自动申请 Let's Encrypt / ZeroSSL 证书。在节点配置中填写域名并勾选「自动 TLS」后，Agent 在首次启动内核前完成证书申请，无需手动上传。
+    <Callout type="info" title="证书管理（复用 Caddy）">
+      节点服务器上的 <strong>Caddy</strong> 负责自动申请并续期 Let's Encrypt / ZeroSSL 证书。在节点配置中填写域名后，Agent 直接复用 Caddy 证书目录下的
+      <code>.crt</code> / <code>.key</code> 文件（默认 <code>/var/lib/caddy/.../certificates/...</code>）写入内核配置，无需手动上传，也不必让内核自行签发——证书续期完全交给 Caddy。
     </Callout>
 
     <h2>配置下发链路</h2>

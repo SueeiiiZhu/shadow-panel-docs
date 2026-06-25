@@ -147,7 +147,8 @@ const certReuse = `# 旧节点证书目录示例（Trojan Panel 默认路径）
       </li>
       <li>
         <strong>证书可直接复用</strong>，将旧路径下的 <code>fullchain.pem</code> /
-        <code>privkey.pem</code> 填入新节点的 TLS 配置，或配置 shadow-agent 统一管理证书目录。
+        <code>privkey.pem</code> 填入新节点的 TLS 配置先行过渡；待节点上的 <strong>Caddy</strong>
+        为同一域名签发证书后，再把节点切到「证书来源 = Caddy」，后续续期即交由 Caddy 自动完成。
       </li>
     </ol>
 
@@ -236,8 +237,9 @@ const certReuse = `# 旧节点证书目录示例（Trojan Panel 默认路径）
     </ol>
 
     <Callout type="info" title="证书续期注意">
-      如果旧栈使用 ACME 自动续期，迁移后确保续期任务已切换到 shadow-agent 管理，
-      避免旧证书到期后新节点 TLS 握手失败。
+      旧栈通常由其自带 Caddy 容器（或 acme.sh）管理证书；迁移到 Shadow Panel 后，
+      证书续期统一交给新栈节点上的 <strong>Caddy</strong>。确认新 Caddy 已为节点域名签发证书、
+      且内核已指向 Caddy 的证书目录后，再停用旧续期任务，避免旧证书到期后 TLS 握手失败。
     </Callout>
 
   </DocPage>
