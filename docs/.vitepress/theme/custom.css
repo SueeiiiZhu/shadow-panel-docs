@@ -1,0 +1,59 @@
+/**
+ * Shadow Panel 暗影主题
+ * 在 VitePress 默认主题上覆写品牌色与首页 hero 渐变光晕。
+ * 主色调：靛蓝 → 青（区别于 Vue 绿 / Vite 紫），契合「暗影 / 代理 / 隧道」气质。
+ */
+
+:root {
+  /* 品牌色（浅色模式，需在白底有足够对比度） */
+  --vp-c-brand-1: #0284c7; /* sky-600，链接 / 强调文字 */
+  --vp-c-brand-2: #0369a1; /* sky-700，hover */
+  --vp-c-brand-3: #0ea5e9; /* sky-500，按钮底色 */
+  --vp-c-brand-soft: rgba(14, 165, 233, 0.14);
+
+  /* 首页大标题渐变（hero name）：靛蓝 → 青 */
+  --vp-home-hero-name-color: transparent;
+  --vp-home-hero-name-background: linear-gradient(
+    120deg,
+    #6366f1 30%,
+    #22d3ee
+  );
+
+  /* 首页 hero 图标背后的光晕（设置 hero.image 时生效） */
+  --vp-home-hero-image-background-image: linear-gradient(
+    120deg,
+    rgba(99, 102, 241, 0.7) 30%,
+    rgba(34, 211, 238, 0.7)
+  );
+  --vp-home-hero-image-filter: blur(68px);
+}
+
+.dark {
+  /* 暗色模式品牌色（提亮以保证可读性） */
+  --vp-c-brand-1: #38bdf8; /* sky-400 */
+  --vp-c-brand-2: #0ea5e9; /* sky-500 */
+  --vp-c-brand-3: #0284c7; /* sky-600 */
+  --vp-c-brand-soft: rgba(56, 189, 248, 0.16);
+}
+
+/* 首页特性卡片：细微的悬浮上移 + 品牌色描边，增加现代感 */
+.VPFeature {
+  transition:
+    border-color 0.25s,
+    transform 0.25s,
+    box-shadow 0.25s;
+}
+.VPFeature:hover {
+  border-color: var(--vp-c-brand-1);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(2, 132, 199, 0.12);
+}
+
+/* 主按钮渐变，呼应 hero 标题配色 */
+.VPButton.brand {
+  border: none;
+  background: linear-gradient(120deg, #4f5bf0 10%, #06b6d4 90%);
+}
+.VPButton.brand:hover {
+  background: linear-gradient(120deg, #4049d8 10%, #0aa3bd 90%);
+}

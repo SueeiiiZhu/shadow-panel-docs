@@ -38,7 +38,8 @@ title: 节点管理
 
 下图以文本流程图展示从 Panel 保存节点到内核进程上线的完整链路。与旧版 Trojan Panel 使用无 TLS 的 gRPC 下发不同，Shadow Panel 全程通过 HTTPS REST（Agent 默认端口 `8443`）加 bearer token 认证，无需在节点服务器上暴露额外的 gRPC 端口，也不再依赖共享 MySQL 传递账号数据。
 
-```text title="配置下发链路"
+::: code-group
+```text [配置下发链路]
 Panel 保存节点
   │
   └─► POST /agents/{id}/nodes  （Panel 内部触发下发）
@@ -57,6 +58,7 @@ Panel 保存节点
                       │
                       └─► 回报状态  200 OK { "status": "running", "pid": 12345 }
 ```
+:::
 
 | 对比项 | 旧版 Trojan Panel | Shadow Panel |
 |---|---|---|

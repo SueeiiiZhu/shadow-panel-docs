@@ -2,34 +2,39 @@
 
 [Shadow Panel](https://trojanpanel.github.io/) 是对 [Trojan Panel](https://trojanpanel.github.io/) 的轻量化重写：单二进制 + SQLite 起步、HTTPS REST 取代无 TLS gRPC、Caddy 自动签发 TLS 证书，并**原生支持 socks/https 上游与 dialer-proxy 链式出站**，让面板能直接对接 IP 代理站提供的节点。
 
-本仓库是它的**教程与部署文档站**，使用 **VuePress 2 + vuepress-theme-hope** 构建，内容为 markdown。
+本仓库是它的**教程与部署文档站**，使用 **VitePress（默认主题 + 暗影品牌色美化）** 构建，内容为 markdown。
 
 ## 技术栈
 
 | 层 | 选型 |
 | --- | --- |
-| 框架 | VuePress 2 (`2.0.0-rc`) |
-| 打包 | `@vuepress/bundler-vite` |
-| 主题 | `vuepress-theme-hope`（hint 容器 / 代码分组 / 选项卡等增强） |
-| 搜索 | `@vuepress/plugin-slimsearch`（本地全文搜索，`Ctrl+K`） |
+| 框架 | VitePress (`^1.6.4`) |
+| 主题 | VitePress 默认主题 + 自定义品牌色 CSS（`docs/.vitepress/theme/`） |
+| 搜索 | 内置本地全文搜索（`search.provider: 'local'`，minisearch） |
 | 内容 | Markdown（`docs/*.md`） |
 
 ## 开发
 
 ```bash
 pnpm install
-pnpm docs:dev     # 本地开发，默认 http://localhost:8080
-pnpm docs:build   # 产物输出到 docs/.vuepress/dist/
+pnpm dev          # 本地开发，默认 http://localhost:5173
+pnpm build        # 产物输出到 docs/.vitepress/dist/
+pnpm preview      # 本地预览构建产物
 ```
+
+> 别名 `pnpm docs:dev` / `pnpm docs:build` / `pnpm docs:preview` 等价可用。
 
 ## 目录结构
 
 ```
 docs/
-├── .vuepress/
-│   ├── config.js         # 站点配置：hope 主题 / 导航 / 侧边栏 / slimsearch
-│   └── public/           # 静态资源（favicon 等）
-├── README.md             # 首页（home 布局：介绍）
+├── .vitepress/
+│   ├── config.ts         # 站点配置：导航 / 侧边栏 / 本地搜索 / 中文文案
+│   └── theme/
+│       ├── index.ts      # 继承默认主题并挂载自定义样式
+│       └── custom.css    # 暗影品牌色（靛蓝→青渐变）+ hero / 卡片美化
+├── public/               # 静态资源（favicon 等）
+├── index.md              # 首页（layout: home）
 ├── why.md                # 为什么重写
 ├── architecture.md       # 系统架构
 ├── quick-start.md        # 快速开始
@@ -42,7 +47,7 @@ docs/
 └── faq.md                # 常见问题
 ```
 
-> 侧边栏分组与顺序在 `docs/.vuepress/config.js` 的 `sidebar` 中维护。
+> 导航、侧边栏分组与顺序在 `docs/.vitepress/config.ts` 中维护。
 
 ## 内容要点
 

@@ -3,18 +3,17 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Shadow Panel 教程与部署文档站（VuePress 2）",
+  "description": "Shadow Panel 教程与部署文档站（VitePress）",
   "scripts": {
-    "docs:dev": "vuepress dev docs",
-    "docs:build": "vuepress build docs",
-    "docs:clean": "vuepress dev docs --clean-cache"
+    "dev": "vitepress dev docs",
+    "build": "vitepress build docs",
+    "preview": "vitepress preview docs",
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs"
   },
   "devDependencies": {
-    "@vuepress/bundler-vite": "2.0.0-rc.30",
-    "@vuepress/plugin-slimsearch": "2.0.0-rc.130",
-    "sass-embedded": "^1.100.0",
-    "vue": "^3.5.13",
-    "vuepress": "2.0.0-rc.30",
-    "vuepress-theme-hope": "2.0.0-rc.107"
+    "vitepress": "^1.6.4",
+    "vue": "^3.5.13"
   }
 }

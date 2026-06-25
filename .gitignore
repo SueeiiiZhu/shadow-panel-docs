@@ -3,7 +3,7 @@ node_modules
 .DS_Store
 *.log
 
-# VuePress
-docs/.vuepress/.cache
-docs/.vuepress/.temp
-docs/.vuepress/dist
+# VitePress
+docs/.vitepress/cache
+docs/.vitepress/dist
+docs/.vitepress/.temp

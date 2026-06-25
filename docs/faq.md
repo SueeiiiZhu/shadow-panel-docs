@@ -45,7 +45,8 @@ SQLite 是单文件数据库，shadow-panel 二进制内置驱动，启动时自
 
 Shadow Panel 在节点配置中统一抽象了 `upstream` 字段，shadow-agent 在生成各内核配置时会按上表自动翻译为对应格式；Trojan-Go 不在支持矩阵内。
 
-```json title="xray-dialer-proxy.json"
+::: code-group
+```json [xray-dialer-proxy.json]
 {
   "outbounds": [
     {
@@ -66,8 +67,10 @@ Shadow Panel 在节点配置中统一抽象了 `upstream` 字段，shadow-agent 
   ]
 }
 ```
+:::
 
-```json title="sing-box-detour.json"
+::: code-group
+```json [sing-box-detour.json]
 {
   "outbounds": [
     { "type": "direct", "tag": "direct-out",
@@ -78,8 +81,10 @@ Shadow Panel 在节点配置中统一抽象了 `upstream` 字段，shadow-agent 
   ]
 }
 ```
+:::
 
-```yaml title="hysteria2-outbounds.yaml"
+::: code-group
+```yaml [hysteria2-outbounds.yaml]
 # Hysteria2 服务端 outbounds（config.yaml）
 outbounds:
   - name: socks5-upstream
@@ -93,8 +98,10 @@ acl:
   inline:
     - outbound(socks5-upstream) all
 ```
+:::
 
-```json title="naiveproxy-upstream.json"
+::: code-group
+```json [naiveproxy-upstream.json]
 {
   "handler": "forward_proxy",
   "hide_ip": true,
@@ -102,6 +109,7 @@ acl:
   "upstream": "socks5://u123:p456@proxy.example.com:1080"
 }
 ```
+:::
 
 ## 上游 socks5 节点不支持 UDP，会影响哪些协议？
 
