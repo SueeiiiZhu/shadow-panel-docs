@@ -32,7 +32,7 @@ docs/
 │   ├── config.ts         # 站点配置：导航 / 侧边栏 / 本地搜索 / 中文文案
 │   └── theme/
 │       ├── index.ts      # 继承默认主题并挂载自定义样式
-│       └── custom.css    # 暗影品牌色（靛蓝→青渐变）+ hero / 卡片美化
+│       └── custom.css    # 仅靛蓝品牌色 + hero 居中（极简，版式交还默认主题）
 ├── public/               # 静态资源（favicon 等）
 ├── index.md              # 首页（layout: home）
 ├── why.md                # 为什么重写
