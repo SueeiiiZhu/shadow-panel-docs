@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "description": "Shadow Panel 教程与部署文档站（VitePress）",
+  "packageManager": "pnpm@10.33.0",
   "scripts": {
     "dev": "vitepress dev docs",
     "build": "vitepress build docs",

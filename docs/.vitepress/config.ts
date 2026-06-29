@@ -1,12 +1,17 @@
 import { defineConfig } from 'vitepress'
 
+// 部署在 GitHub Pages 项目页：https://sueeiiizhu.github.io/shadow-panel-docs/
+// 自建域名或迁到用户页时改回 '/'。
+const base = '/shadow-panel-docs/'
+
 export default defineConfig({
+  base,
   lang: 'zh-CN',
   title: 'Shadow Panel',
   description:
     '轻量化多协议代理面板 —— 两个单二进制、原生上游/dialer-proxy、最新内核、Caddy 自动 TLS。Trojan Panel 的轻量化重写。',
 
-  head: [['link', { rel: 'icon', href: '/favicon.svg' }]],
+  head: [['link', { rel: 'icon', href: `${base}favicon.svg` }]],
 
   lastUpdated: false,
   cleanUrls: true,
